@@ -2,12 +2,42 @@ local M = {}
 
 local fzf = require("fzf-lua")
 local cd_history = {}
+local history_file = vim.fn.stdpath("data") .. "/cd_history.txt"
 
+-- Load history from file
+local function load_history()
+	local f = io.open(history_file, "r")
+	if f then
+		for line in f:lines() do
+			table.insert(cd_history, 1, line) -- Insert at the start for recently visited order
+		end
+		f:close()
+	end
+end
+
+-- Save history to file
+local function save_history()
+	local f = io.open(history_file, "w")
+	if f then
+		for _, dir in ipairs(cd_history) do
+			f:write(dir .. "\n")
+		end
+		f:close()
+	end
+end
+
+-- Add the current directory to the history
 local function add_to_history()
 	local cwd = vim.fn.getcwd()
-	if #cd_history == 0 or cd_history[#cd_history] ~= cwd then
-		table.insert(cd_history, cwd)
+	-- Remove cwd if it already exists in the list
+	for i, dir in ipairs(cd_history) do
+		if dir == cwd then
+			table.remove(cd_history, i)
+			break
+		end
 	end
+	table.insert(cd_history, 1, cwd) -- Add to the start for most recent order
+	save_history()
 end
 
 -- Change to a selected directory
@@ -34,6 +64,7 @@ end
 
 -- Command to invoke the CD history
 function M.setup()
+	load_history()
 	vim.api.nvim_create_user_command("CdHistory", M.show_cd_history, { nargs = 0 })
 
 	-- Hook into `DirChanged` event to update history
