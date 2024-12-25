@@ -12,6 +12,8 @@ local function load_history()
 			table.insert(cd_history, 1, line) -- Insert at the start for recently visited order
 		end
 		f:close()
+	else
+		vim.notify("Couldn't open history file", vim.log.levels.ERROR, { title = "CD History" })
 	end
 end
 
@@ -40,23 +42,13 @@ local function add_to_history()
 	save_history()
 end
 
--- Change to a selected directory
-local function change_directory(selected_dir)
-	if selected_dir and selected_dir ~= "" then
-		vim.cmd("cd " .. selected_dir)
-		add_to_history()
-		print("Changed directory to: " .. selected_dir)
-	end
-end
-
 -- Show the directory history in fzf-lua
 function M.show_cd_history()
-	add_to_history()
 	fzf.fzf_exec(cd_history, {
 		prompt = "CD History> ",
 		actions = {
 			["default"] = function(selected)
-				change_directory(selected[1])
+				vim.cmd("cd" .. selected[1])
 			end,
 		},
 	})
